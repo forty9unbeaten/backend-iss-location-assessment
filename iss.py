@@ -77,6 +77,36 @@ def show_iss_map(loc_data):
     return world_map
 
 
+def show_indy_info(map):
+    '''Shows a map of the location of the International Space
+    Station along with the next time it will pass over
+    Indianapolis, IN'''
+
+    # get time for next pass over Indianapolis
+    indy_loc = {'lat': 39.7683333, 'lon': -86.1580556, 'n': 1}
+    r = requests.get(
+        'http://api.open-notify.org/iss-pass.json', params=indy_loc)
+    next_pass_stamp = r.json()['response'][0]['risetime']
+    next_pass_time = datetime.fromtimestamp(
+        next_pass_stamp).strftime('%m/%d/%y %I:%M %p')
+
+    # show red dot over Indianapolis
+    indy_dot = turtle.Turtle(shape='circle')
+    indy_dot.penup()
+    indy_dot.color('red')
+    indy_dot.goto((indy_loc['lon'], indy_loc['lat']))
+
+    # show time of next pass over Indianapolis above dot
+    time_display = turtle.Turtle(shape='blank')
+    time_display.penup()
+    time_display.goto((indy_loc['lon'], indy_loc['lat'] + 10))
+    time_display.color('red')
+    time_display.write(next_pass_time, font=(
+        'Arial', 16, 'normal'), align='center')
+
+    return map
+
+
 def create_parser():
     '''Creates and returns a command-line argument parser'''
     parser = argparse.ArgumentParser()
@@ -95,6 +125,12 @@ def create_parser():
                         dest='map',
                         help='Show International Space Station ' +
                         'location on a map')
+    parser.add_argument('-i', '--indy',
+                        action='store_true',
+                        dest='indy',
+                        help='Show time of next International ' +
+                        'Space Station pass over Indianapolis on a' +
+                        'map')
     return parser
 
 
@@ -110,15 +146,23 @@ def main(args):
         parser.print_help()
         sys.exit()
 
+    # show relevant info based on args provided
     if ns.astros:
         astronauts = get_astros()
         print_astro_info(astronauts)
     if ns.loc:
         location = get_iss_location()
         print_iss_loc(location)
-    if ns.map:
+    if ns.map and ns.indy:
+        print('\n\tI CAN ONLY SHOW YOU ONE MAP AT A TIME. SORRY! :(\n')
+    elif ns.map:
         location = get_iss_location()
         world_map = show_iss_map(location)
+        world_map.exitonclick()
+    elif ns.indy:
+        location = get_iss_location()
+        world_map = show_iss_map(location)
+        world_map = show_indy_info(world_map)
         world_map.exitonclick()
 
 
